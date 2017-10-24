@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Image Search Abstraction Layer</title>
+    <script src="https://code.jquery.com/jquery-2.2.1.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    
+    <style>
+      img.dImage {
+        max-width: 500px
+      }
+      code, .codediv{
+        background-color: aqua
+      }
+      
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        Image Search Abstraction Layer
+      </h1>
+    </header>
+
+    <p>User Story: I can get the image URLs, alt text and page urls for a set of images relating to a given search string.</p>
+    <p>User Story: I can paginate through the responses by adding a ?offset=2 parameter to the URL.</p>
+    <p>User Story: I can get a list of the most recently submitted search strings.</p>
+    <h2 id="examples">Examples</h2>
+    <p>Search for cats:<br><code>host/search/cats</code></p>
+    <p>Search for cats, skip first 10:<br><code>host/search/cats?offset=10</code></p>
+    <p>View recent searches:<br><code>host/recent</code></p>
+    
+    <hr>
+    <h2>
+       Demo
+    </h2>
+
+    <div ng-app="myApp" ng-controller="ctrl">
+      Search:
+      <input type="text" value="funny cats" ng-model="searchStr">
+      Offset:
+      <input type="text" value="0" ng-model="offset">
+      <br>
+      Url: <code><a ng-href="{{queryUrl}}">{{currUrl}}<span ng-bind="queryUrl"></span></a></code>
+      <br> 
+
+      <button ng-click="search()">
+        Search
+      </button>
+      <p/>
+      <button ng-click="latest()">
+        Recent Searches
+      </button>
+
+      
+      <div ng-show="images.length > 0">
+        <table>
+          <tr ng-repeat="x in images">
+            <td>
+              <a ng-href="{{x.pageUrl}}" ng-alt="{{x.altText}}"><img class="dImage" ng-src="{{ x.url }}"></a>
+            </td>
+          </tr>
+
+        </table>
+      </div>
+      
+      <div ng-show="latItems.length > 0">
+        <table border="1">
+          <tr>
+            <th>Search Term</th>
+            <th>Time</th>
+          </tr>
+          <tr ng-repeat="x in latItems">
+            <td>
+              {{x.term}}     
+            </td>
+            <td>
+              {{x.when}}
+            </td>
+          </tr>
+        </table>
+      </div>
+      
+      <p/><p/>
+      
+      <div style="display: none;">
+        
+        
+        Debug:<br/>{{dout}}<p/>
+        Responce:<br/>
+        <div class="codediv">
+          <code>
+          <pre>{{response | json}}</pre>
+          </code>
+        </div>
+      </div>
+      
+    </div>
+    
+    
+
+    
+
+  </body>
+  <script>
+      var app = angular.module("myApp", []);
+      app.controller("ctrl", function($scope,$http,$location){
+        $scope.dout = "debug test";
+        $scope.searchStr = "funny cats";
+        $scope.offset = "0";
+        
+        $scope.queryUrl = 'search/' + $scope.searchStr + '?offset=' + $scope.offset;
+        
+        $scope.currUrl = $location.absUrl();
+        
+        $scope.$watchCollection('[searchStr, offset]', function(newVals){
+          $scope.queryUrl = 'search/' + $scope.searchStr;
+          if ( $scope.offset > 0 ) {
+            $scope.queryUrl += '?offset=' + $scope.offset;
+          }
+        });
+
+        $scope.search = function() {
+          $scope.dout = "getting";
+          $http.get($scope.queryUrl)
+            .then(function(res){
+              $scope.dout = 'success';
+              $scope.response = res;
+              $scope.images = res.data;
+              $scope.latItems = "";
+            }, function(error){
+              $scope.dout = 'error';
+              $scope.response = "fail";
+            } );
+        };
+        
+        $scope.latest = function() {
+          $scope.dout = "getting";
+          $http.get("latest")
+            .then(function(res){
+              $scope.dout = 'success';
+              $scope.response = res;
+              $scope.images = "";
+              $scope.latItems = res.data;
+            }, function(error){
+              $scope.dout = 'error';
+              $scope.response = "fail";
+            } );
+        };
+        
+        
+      });
+      
+      
+    </script>
+</html>
